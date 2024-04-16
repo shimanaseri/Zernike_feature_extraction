@@ -6,7 +6,10 @@ import jax.numpy as jnp
 from jax import ops
 import numpy as np
 import os
-import skimage
+import skimage.io
+import pandas as pd
+from scipy.stats import skew
+from skimage.color import rgb2gray
 
 class ImageProcessor:
     def __init__(self, verbose=False):
