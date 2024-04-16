@@ -39,7 +39,7 @@ class Zernike_ImageProcessor:
         result = img.copy()
 
         # convert image to grayscale
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        gray = rgb2gray(jnp.array(img)) 
 
         # found the circle in the image
         circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1.7, minDist= 100, param1 = 48, param2 = 100, minRadius=70, maxRadius=100)
