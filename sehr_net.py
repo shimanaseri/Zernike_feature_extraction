@@ -1,10 +1,3 @@
-
-!pip install scipy scikit-image cupy-cuda100
-!pip install --upgrade "jax[cuda12_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
-!pip install jax jaxlib
-!pip install mahotas
-
-
 import glob
 import numpy as np
 from jax import jit
