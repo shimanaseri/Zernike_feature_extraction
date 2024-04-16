@@ -12,6 +12,8 @@ from scipy.stats import skew
 from skimage.color import rgb2gray
 from mahotas.features import zernike_moments
 import mahotas
+import cv2  # Note: OpenCV still uses numpy arrays
+import shutil
 
 class ImageProcessor:
     def __init__(self, verbose=False):
