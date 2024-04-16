@@ -14,6 +14,22 @@ import skimage.io
 import pandas as pd
 from jax import ops
 
+import glob
+import numpy as np
+from jax import jit
+import jax
+import jax.numpy as jnp
+import cv2  # Note: OpenCV still uses numpy arrays
+import mahotas
+import os
+import shutil
+from mahotas.features import zernike_moments
+from scipy.stats import skew
+from skimage.color import rgb2gray
+import skimage.io
+import pandas as pd
+from jax import ops
+
 class Zernike_ImageProcessor:
     def __init__(self, verbose=False):
         self.verbose = verbose
@@ -37,15 +53,20 @@ class Zernike_ImageProcessor:
 
         # save a copy for creating resulting image
         result = img.copy()
+        result = np.array(result)
 
         # convert image to grayscale
-        gray = rgb2gray(jnp.array(img)) 
-
+        gray = rgb2gray(jnp.array(img))
+        gray = (gray * 255).astype(np.uint8)
+        # print("Gray image shape:", gray.shape)
+        # print("Gray image data type:", gray.dtype)
+        
         # found the circle in the image
         circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1.7, minDist= 100, param1 = 48, param2 = 100, minRadius=70, maxRadius=100)
         circles = jnp.array([[[145, 145, 123]]])
         # draw found circle, for visual only
         circle_output = img.copy()
+        circle_output = np.array(circle_output)
 
         # check if we found exactly 1 circle
         num_circles = len(circles)
@@ -64,15 +85,17 @@ class Zernike_ImageProcessor:
 
             for (x, y, radius) in circles:
               circle_x, circle_y, circle_radius = (int(x), int(y), int(radius))  # Convert to integers
+              # print("Circle output type:", type(circle_output))
+              # print("Circle output shape:", circle_output.shape)
               cv2.circle(circle_output, (circle_x, circle_y), circle_radius, (255, 0, 0), 4)
 
                 # print("circle center:({},{}), radius:{}".format(x,y,radius))
 
         # keep a median filtered version of image, will be used later
-        median_filtered = cv2.medianBlur(img, 19)
+        median_filtered = cv2.medianBlur(np.array(img), 19)
 
         # Convert BGR to HSV
-        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        hsv = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2HSV)
 
 
 
