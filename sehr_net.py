@@ -1,6 +1,4 @@
-import glob
-import numpy as np
-from jax import jit
+ 
 import jax
 import jax.numpy as jnp
 import cv2  # Note: OpenCV still uses numpy arrays
@@ -12,33 +10,19 @@ from scipy.stats import skew
 from skimage.color import rgb2gray
 import skimage.io
 import pandas as pd
-from jax import ops
-
-import glob
-import numpy as np
-from jax import jit
-import jax
 import jax.numpy as jnp
-import cv2  # Note: OpenCV still uses numpy arrays
-import mahotas
-import os
-import shutil
-from mahotas.features import zernike_moments
-from scipy.stats import skew
-from skimage.color import rgb2gray
-import skimage.io
-import pandas as pd
 from jax import ops
+import numpy as np
 
-class Zernike_ImageProcessor:
+class ImageProcessor:
     def __init__(self, verbose=False):
         self.verbose = verbose
 
     def log(self, message):
         if self.verbose:
             print(message)
-            
-    
+
+
     def numberRemoving(self, img):
         CONNECTIVITY = 4
 
@@ -51,22 +35,20 @@ class Zernike_ImageProcessor:
         img_height = img.shape[0]
         img_width = img.shape[1]
 
+        # print("Image type:", type(img))
+        # print("Image shape:", img.shape)
+
         # save a copy for creating resulting image
         result = img.copy()
-        result = np.array(result)
 
         # convert image to grayscale
-        gray = rgb2gray(jnp.array(img))
-        gray = (gray * 255).astype(np.uint8)
-        # print("Gray image shape:", gray.shape)
-        # print("Gray image data type:", gray.dtype)
-        
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
         # found the circle in the image
         circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1.7, minDist= 100, param1 = 48, param2 = 100, minRadius=70, maxRadius=100)
-        circles = jnp.array([[[145, 145, 123]]])
+        circles = np.array([[[145, 145, 123]]])
         # draw found circle, for visual only
         circle_output = img.copy()
-        circle_output = np.array(circle_output)
 
         # check if we found exactly 1 circle
         num_circles = len(circles)
@@ -81,21 +63,19 @@ class Zernike_ImageProcessor:
         circle_radius = 0
         if circles is not None:
             # convert the (x, y) coordinates and radius of the circles to integers
-            circles = jnp.round(circles[0, :]).astype("int")
+            circles = np.round(circles[0, :]).astype("int")
 
             for (x, y, radius) in circles:
               circle_x, circle_y, circle_radius = (int(x), int(y), int(radius))  # Convert to integers
-              # print("Circle output type:", type(circle_output))
-              # print("Circle output shape:", circle_output.shape)
               cv2.circle(circle_output, (circle_x, circle_y), circle_radius, (255, 0, 0), 4)
 
                 # print("circle center:({},{}), radius:{}".format(x,y,radius))
 
         # keep a median filtered version of image, will be used later
-        median_filtered = cv2.medianBlur(np.array(img), 19)
+        median_filtered = cv2.medianBlur(img, 19)
 
         # Convert BGR to HSV
-        hsv = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2HSV)
+        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
 
 
@@ -130,6 +110,7 @@ class Zernike_ImageProcessor:
                     if (dx * dx + dy * dy <= circle_radius * circle_radius):
                         result[row, col] = median_filtered[row, col]
         return result
+
     def cutCircle(self, img):
         self.log("Cutting circle in image...")
         img_shape = img.shape
@@ -137,7 +118,7 @@ class Zernike_ImageProcessor:
         mask = (x_indices - 145) ** 2 + (y_indices - 145) ** 2 > 123**2
         img = jnp.array(img)  # Ensure img is a JAX array
         img = jnp.where(mask[:,:,None], 0, img)  # Apply mask, set to 0 where mask is True
-        return self.numberRemoving(img)
+        return self.numberRemoving(np.array(img))
 
     def compute_features(self, preprocessed_image, radius, degree, iscolor=False):
         self.log("Computing features...")
@@ -183,7 +164,7 @@ class Zernike_ImageProcessor:
         for segment_name, segment_image in segments.items():
             self.log(f"Processing segment: {segment_name}")
             preprocessed_image = self.cutCircle(segment_image)
-            features = self.compute_features(preprocessed_image, radius=123, degree=4, iscolor=iscolor)
+            features = self.compute_features(preprocessed_image, radius=123, degree=8, iscolor=iscolor)
             segment_features[segment_name] = features
 
         self.log("Image segments processed.")
@@ -215,4 +196,5 @@ class Zernike_ImageProcessor:
 
         df = pd.DataFrame(data_records)
         self.log("Dataset processing complete.")
+        print('Bye!')
         return df
