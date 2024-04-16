@@ -159,7 +159,7 @@ class ImageProcessor:
         for segment_name, segment_image in segments.items():
             self.log(f"Processing segment: {segment_name}")
             preprocessed_image = self.cutCircle(segment_image)
-            features = self.compute_features(preprocessed_image, radius=123, degree=8, iscolor=iscolor)
+            features = self.compute_features(preprocessed_image, radius=123, degree=15, iscolor=iscolor)
             segment_features[segment_name] = features
 
         self.log("Image segments processed.")
