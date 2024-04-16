@@ -1,15 +1,7 @@
- 
+import glob
+import numpy as np
+from jax import jit
 import jax
-import jax.numpy as jnp
-import cv2  # Note: OpenCV still uses numpy arrays
-import mahotas
-import os
-import shutil
-from mahotas.features import zernike_moments
-from scipy.stats import skew
-from skimage.color import rgb2gray
-import skimage.io
-import pandas as pd
 import jax.numpy as jnp
 from jax import ops
 import numpy as np
@@ -42,8 +34,11 @@ class ImageProcessor:
         result = img.copy()
 
         # convert image to grayscale
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
+        gray = rgb2gray(np.array(img))
+        gray = (gray * 255).astype(np.uint8)
+        # print("Gray image shape:", gray.shape)
+        # print("Gray image data type:", gray.dtype)
+        
         # found the circle in the image
         circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1.7, minDist= 100, param1 = 48, param2 = 100, minRadius=70, maxRadius=100)
         circles = np.array([[[145, 145, 123]]])
