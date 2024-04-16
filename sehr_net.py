@@ -40,7 +40,7 @@ class Zernike_ImageProcessor:
         result = np.array(result)
 
         # convert image to grayscale
-        gray = rgb2gray(jnp.array(img))
+        gray = rgb2gray(np.array(img))
         gray = (gray * 255).astype(np.uint8)
         # print("Gray image shape:", gray.shape)
         # print("Gray image data type:", gray.dtype)
