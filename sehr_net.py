@@ -10,6 +10,8 @@ import skimage.io
 import pandas as pd
 from scipy.stats import skew
 from skimage.color import rgb2gray
+from mahotas.features import zernike_moments
+import mahotas
 
 class ImageProcessor:
     def __init__(self, verbose=False):
