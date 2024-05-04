@@ -158,10 +158,10 @@ class ImageProcessor:
         img = jnp.array(img)  # Convert to jax.numpy array
 
         segments = {
-            "AXIAL Curvature": img[10: 300, 15 : 302],
-            "Corneal Thickness": img[10 : 300,690 - 300: 677],
-            "Elevation (Front)": img[690 - 330+27: 677,15 : 302],
-            "Elevation (Back)": img[690 - 330+27: 677,690 - 300: 677] 
+            "AXIAL Curvature": img[10+120: 300+120, 15+434 : 302+434],
+            "Corneal Thickness": img[690 - 330+27+120: 677+120,15+434 : 302+434],
+            "Elevation (Front)": img[10+120: 690 - 330-60+120,690 - 330+29+434 : 690 - 330+302+14+434],
+            "Elevation (Back)": img[690 - 330+27+120: 677+120,690 - 300+434: 434+677]
         }
 
         segment_features = {}
