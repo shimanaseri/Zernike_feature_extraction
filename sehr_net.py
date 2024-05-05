@@ -10,6 +10,7 @@ import skimage.io
 import pandas as pd
 from scipy.stats import skew
 from skimage.color import rgb2gray
+from skimage.color import rgb2hsv
 from mahotas.features import zernike_moments
 import mahotas
 import cv2  # Note: OpenCV still uses numpy arrays
@@ -35,9 +36,6 @@ class ImageProcessor:
         # read image
         img_height = img.shape[0]
         img_width = img.shape[1]
-
-        # print("Image type:", type(img))
-        # print("Image shape:", img.shape)
 
         # save a copy for creating resulting image
         result = img.copy()
@@ -124,45 +122,29 @@ class ImageProcessor:
         img = jnp.where(mask[:,:,None], 0, img)  # Apply mask, set to 0 where mask is True
         return self.numberRemoving(np.array(img))
 
-    def compute_features(self, preprocessed_image, radius, degree, iscolor=False):
+    def compute_features(self, preprocessed_image, radius, degree):
         self.log("Computing features...")
-        gray_image = rgb2gray(jnp.array(preprocessed_image))  # Ensure compatibility with skimage
+        gray_image = rgb2hsv(jnp.array(preprocessed_image))[:, :, 0]  # Ensure compatibility with skimage
         if gray_image.dtype != bool:
             gray_image = gray_image > gray_image.mean()
         zernike_features = zernike_moments(gray_image, radius, degree=degree)
         self.log("Zernike moments computed.")
+        return {
+            'zernike_moments': zernike_features,
+        }
 
-        if iscolor:
-            self.log("Computing color features...")
-            color_features = {}
-            # Conversion to numpy array may be necessary for compatibility with non-JAX operations
-            preprocessed_image_np = np.array(preprocessed_image)
-            for color, channel in zip(['red', 'green', 'blue'], np.rollaxis(preprocessed_image_np, axis=-1)):
-                mean = jnp.mean(channel)
-                std = jnp.std(channel)
-                skewness = skew(channel.flatten())  # This may require a JAX-compatible skew function
-                color_features[color] = {'mean': mean, 'std': std, 'skewness': skewness}
-            self.log("Color features computed.")
-            return {
-                'zernike_moments': zernike_features,
-                'color_features': color_features
-            }
-        else:
-            return {
-                'zernike_moments': zernike_features
-            }
 
-    def process_image_segments(self, image_path, iscolor=False):
+    def process_image_segments(self, image_path):
         self.log(f"Processing image segments for {image_path}...")
         img = skimage.io.imread(image_path)
         is_os = 'OS' in os.path.basename(image_path) 
         img = jnp.array(img)  # Convert to jax.numpy array
 
         segments = {
-            "AXIAL Curvature": img[10+120: 300+120, 15+434 : 302+434],
-            "Corneal Thickness": img[690 - 330+27+120: 677+120,15+434 : 302+434],
-            "Elevation (Front)": img[10+120: 690 - 330-60+120,690 - 330+29+434 : 690 - 330+302+14+434],
-            "Elevation (Back)": img[690 - 330+27+120: 677+120,690 - 300+434: 434+677]
+            "AXIAL Curvature": img[130: 420, 449 : 736],
+            "Corneal Thickness": img[507: 797,449 : 736],
+            "Elevation (Front)": img[130: 420,823 : 1110],
+            "Elevation (Back)": img[507: 797,823 : 1110]
         }
 
         segment_features = {}
@@ -171,37 +153,32 @@ class ImageProcessor:
             if is_os:
                 segment_image = jnp.flip(segment_image, 1) 
             preprocessed_image = self.cutCircle(segment_image)
-            features = self.compute_features(preprocessed_image, radius=123, degree=15, iscolor=iscolor)
+            features = self.compute_features(preprocessed_image, radius=123, degree=15)
             segment_features[segment_name] = features
 
         self.log("Image segments processed.")
         return segment_features
 
-    def process_dataset(self, dataset_dir, iscolor=False):
+    def process_dataset(self, dataset_dir):
         self.log(f"Processing dataset in {dataset_dir}...")
         data_records = []
 
-        for subdir, dirs, files in os.walk(dataset_dir):
+        for subdir, dirs, files in tqdm(os.walk(dataset_dir), desc='Directory Walk'):
             for file in files:
                 if file.lower().endswith(('.jpg', '.png')):
                     file_path = os.path.join(subdir, file)
                     self.log(f"Processing file: {file_path}")
-                    features = self.process_image_segments(file_path, iscolor=iscolor)
+                    features = self.process_image_segments(file_path)
 
                     for segment_name, segment_features in features.items():
                         record = {
                             'File Path': file_path,
                             'Segment': segment_name,
-                            'Zernike Moments': segment_features['zernike_moments'],
+                            'HSV Zernike Moments': segment_features['zernike_moments'],
                         }
-                        if iscolor:
-                            for color, color_features in segment_features['color_features'].items():
-                                for feature_name, feature_value in color_features.items():
-                                    record[f'{color}_{feature_name}'] = feature_value
 
                         data_records.append(record)
 
         df = pd.DataFrame(data_records)
-        self.log("Dataset processing complete.")
-        print('Bye!')
+        print("Dataset processing complete.")
         return df
