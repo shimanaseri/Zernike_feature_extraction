@@ -155,9 +155,7 @@ class ImageProcessor:
     def process_image_segments(self, image_path, iscolor=False):
         self.log(f"Processing image segments for {image_path}...")
         img = skimage.io.imread(image_path)
-        OS =False
-        if 'OS' in os.path.basename(image_path):
-            OS = True  
+        is_os = 'OS' in os.path.basename(image_path) 
         img = jnp.array(img)  # Convert to jax.numpy array
 
         segments = {
@@ -170,10 +168,9 @@ class ImageProcessor:
         segment_features = {}
         for segment_name, segment_image in segments.items():
             self.log(f"Processing segment: {segment_name}")
-            if OS:
-              preprocessed_image = self.cutCircle(jnp.flip(segment_image, 1))
-            else:
-              preprocessed_image = self.cutCircle(segment_image)
+            if is_os:
+                segment_image = cv2.flip(segment_image, 1) 
+            preprocessed_image = self.cutCircle(segment_image)
             features = self.compute_features(preprocessed_image, radius=123, degree=15, iscolor=iscolor)
             segment_features[segment_name] = features
 
