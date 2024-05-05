@@ -155,6 +155,9 @@ class ImageProcessor:
     def process_image_segments(self, image_path, iscolor=False):
         self.log(f"Processing image segments for {image_path}...")
         img = skimage.io.imread(image_path)
+        if 'OS' in os.path.basename(image_path):
+            self.log("Flipping image horizontally as it's an OS image.")
+            img = cv2.flip(img, 1)  # flipCode=1 for flipping horizontally
         img = jnp.array(img)  # Convert to jax.numpy array
 
         segments = {
