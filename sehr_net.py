@@ -169,7 +169,7 @@ class ImageProcessor:
         for segment_name, segment_image in segments.items():
             self.log(f"Processing segment: {segment_name}")
             if is_os:
-                segment_image = cv2.flip(segment_image, 1) 
+                segment_image = jnp.flip(segment_image, 1) 
             preprocessed_image = self.cutCircle(segment_image)
             features = self.compute_features(preprocessed_image, radius=123, degree=15, iscolor=iscolor)
             segment_features[segment_name] = features
