@@ -10,18 +10,37 @@ from scipy.stats import skew
 from skimage.color import rgb2gray
 from mahotas.features import zernike_moments
 import mahotas
-import cv2  # Note: OpenCV still uses numpy arrays
+import cv2  
 import shutil
+from skimage import img_as_ubyte
 
 class ImagePreProcessor:
-    def __init__(self, verbose=False):
+    def __init__(self,base_dir, verbose=False):
         self.verbose = verbose
+        self.base_dir = base_dir
         self.processed_files = set()
+        if not os.path.exists(self.base_dir):
+          os.makedirs(self.base_dir) 
 
     def log(self, message):
         if self.verbose:
             print(message)
+    
+    def save_image(self, image, segment_name, file_name):
+        # Create a directory for each segment if it does not exist
+        segment_dir = os.path.join(self.base_dir, segment_name)
+        if not os.path.exists(segment_dir):
+            os.makedirs(segment_dir)
+        # Save the image
+        file_path = os.path.join(segment_dir, file_name)
+        skimage.io.imsave(file_path, img_as_ubyte(image))  # Save image as unsigned byte
+        self.log(f"Saved {file_path}")
 
+    def save_segment_images(self, image_segments, image_path):
+        # Save each segment of the image in its corresponding folder
+        file_name = os.path.basename(image_path)
+        for segment_name, img in image_segments.items():
+            self.save_image(img, segment_name, file_name)
 
     def numberRemoving(self, img):
         CONNECTIVITY = 4
@@ -144,6 +163,7 @@ class ImagePreProcessor:
                 segment_image = jnp.flip(segment_image, 1)
             preprocessed_image = self.cutCircle(segment_image)
             segment_features[segment_name] = preprocessed_image
+            self.save_segment_images(segment_features, image_path)
 
         # self.log("Image segments processed.")
         return segment_features
@@ -170,8 +190,11 @@ class ImagePreProcessor:
                         }
                         data_records.append(record)
 
-
-
         # self.log("Dataset processing complete.")
         print('Bye!')
         return data_records
+    def zip_segments(self):
+        # Create a zip file containing all segment directories
+        output_zip = os.path.join(self.base_dir, 'segmented_images')
+        shutil.make_archive(base_name=output_zip, format='zip', root_dir=self.base_dir)
+        self.log(f"Created zip file {output_zip}.zip")
