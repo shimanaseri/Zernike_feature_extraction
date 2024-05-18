@@ -45,7 +45,7 @@ class ImageProcessor:
         gray = (gray * 255).astype(np.uint8)
         # print("Gray image shape:", gray.shape)
         # print("Gray image data type:", gray.dtype)
-        
+
         # found the circle in the image
         circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1.7, minDist= 100, param1 = 48, param2 = 100, minRadius=70, maxRadius=100)
         circles = np.array([[[145, 145, 123]]])
@@ -137,7 +137,7 @@ class ImageProcessor:
     def process_image_segments(self, image_path):
         self.log(f"Processing image segments for {image_path}...")
         img = skimage.io.imread(image_path)
-        is_os = 'OS' in os.path.basename(image_path) 
+        is_os = 'OS' in os.path.basename(image_path)
         img = jnp.array(img)  # Convert to jax.numpy array
 
         segments = {
@@ -151,7 +151,7 @@ class ImageProcessor:
         for segment_name, segment_image in segments.items():
             self.log(f"Processing segment: {segment_name}")
             if is_os:
-                segment_image = jnp.flip(segment_image, 1) 
+                segment_image = jnp.flip(segment_image, 1)
             preprocessed_image = self.cutCircle(segment_image)
             features = self.compute_features(preprocessed_image, radius=123, degree=15)
             segment_features[segment_name] = features
