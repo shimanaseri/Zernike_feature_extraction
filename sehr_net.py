@@ -163,7 +163,7 @@ class ImageProcessor:
         self.log(f"Processing dataset in {dataset_dir}...")
         data_records = []
 
-        for subdir, dirs, files in tqdm(os.walk(dataset_dir), desc='Directory Walk'):
+        for subdir, dirs, files in os.walk(dataset_dir):
             for file in files:
                 if file.lower().endswith(('.jpg', '.png')):
                     file_path = os.path.join(subdir, file)
